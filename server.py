@@ -1,8 +1,10 @@
-from pyexpat import model
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import List, Optional
+
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 import cv2
 import numpy as np
@@ -14,11 +16,7 @@ import random
 app = FastAPI()
 templates = Jinja2Templates(directory = 'templates')
 
-model_selection_options = ['yolov5s','yolov5m','yolov5l','yolov5x','yolov5n',
-                        'yolov5n6','yolov5s6','yolov5m6','yolov5l6','yolov5x6','berk_reis_red_car_detection_model']
-model_dict = {model_name: None for model_name in model_selection_options} #set up model cache
-
-print(model_dict)
+model_selection_options = ["berk","xalil"]
 
 colors = [tuple([random.randint(0, 255) for _ in range(3)]) for _ in range(100)] #for bbox plotting
 
@@ -35,17 +33,6 @@ def home(request: Request):
             "model_selection_options": model_selection_options,
         })
 
-@app.get("/drag_and_drop_detect")
-def drag_and_drop_detect(request: Request):
-    ''' drag_and_drop_detect detect page. Uses a drag and drop
-    file interface to upload files to the server, then renders 
-    the image + bboxes + labels on HTML canvas.
-    '''
-
-    return templates.TemplateResponse('drag_and_drop_detect.html', 
-            {"request": request,
-            "model_selection_options": model_selection_options,
-        })
 
 
 ##############################################
@@ -70,10 +57,7 @@ def detect_with_server_side_rendering(request: Request,
     If you just want JSON results, just return the results of the 
     results_to_json() function and skip the rest
     '''
-
-    if model_dict[model_name] is None:
-        model_dict[model_name] = torch.hub.load('ultralytics/yolov5', model_name, pretrained=True)
-
+    
     img_batch = [cv2.imdecode(np.fromstring(file.file.read(), np.uint8), cv2.IMREAD_COLOR)
                     for file in file_list]
 
@@ -81,9 +65,10 @@ def detect_with_server_side_rendering(request: Request,
     #using cvtColor instead of [...,::-1] to keep array contiguous in RAM
     img_batch_rgb = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in img_batch]
 
-    results = model_dict[model_name](img_batch_rgb, size = img_size)
+    xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/gity/berk.pt",force_reload=True)
+    results = xalil_model(img_batch_rgb, size = img_size)
 
-    json_results = results_to_json(results,model_dict[model_name])
+    json_results = results_to_json(results,xalil_model)
 
     img_str_list = []
     #plot bboxes on the image
@@ -105,52 +90,6 @@ def detect_with_server_side_rendering(request: Request,
         })
 
 
-@app.post("/detect")
-def detect_via_api(request: Request,
-                file_list: List[UploadFile] = File(...), 
-                model_name: str = Form(...),
-                img_size: Optional[int] = Form(640),
-                download_image: Optional[bool] = Form(False)):
-    
-    '''
-    Requires an image file upload, model name (ex. yolov5s). 
-    Optional image size parameter (Default 640)
-    Optional download_image parameter that includes base64 encoded image(s) with bbox's drawn in the json response
-    
-    Returns: JSON results of running YOLOv5 on the uploaded image. Bbox format is X1Y1X2Y2. 
-            If download_image parameter is True, images with
-            bboxes drawn are base64 encoded and returned inside the json response.
-
-    Intended for API usage.
-    '''
-
-    if model_dict[model_name] is None:
-        model_dict[model_name] = torch.hub.load('ultralytics/yolov5', model_name, pretrained=True)
-    
-    img_batch = [cv2.imdecode(np.fromstring(file.file.read(), np.uint8), cv2.IMREAD_COLOR)
-                for file in file_list]
-
-    #create a copy that corrects for cv2.imdecode generating BGR images instead of RGB, 
-    #using cvtColor instead of [...,::-1] to keep array contiguous in RAM
-    img_batch_rgb = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in img_batch]
-    
-    results = model_dict[model_name](img_batch_rgb, size = img_size) 
-    json_results = results_to_json(results,model_dict[model_name])
-
-    if download_image:
-        #server side render the image with bounding boxes
-        for idx, (img, bbox_list) in enumerate(zip(img_batch, json_results)):
-            for bbox in bbox_list:
-                label = f'{bbox["class_name"]} {bbox["confidence"]:.2f}'
-                plot_one_box(bbox['bbox'], img, label=label, 
-                        color=colors[int(bbox['class'])], line_thickness=3)
-
-            payload = {'image_base64':base64EncodeImage(img)}
-            json_results[idx].append(payload)
-
-    encoded_json_results = str(json_results).replace("'",r'"')
-    return encoded_json_results
-    
 ##############################################
 #--------------Helper Functions---------------
 ##############################################
@@ -199,13 +138,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default = 'localhost')
     parser.add_argument('--port', default = 8000)
-    parser.add_argument('--precache-models', action='store_true', 
+    parser.add_argument('--precache-models', action='store_true',  #what precache means ????
             help='Pre-cache all models in memory upon initialization, otherwise dynamically caches models')
     opt = parser.parse_args()
 
     if opt.precache_models:
-        model_dict = {model_name: torch.hub.load('ultralytics/yolov5', model_name, pretrained=True) 
-                        for model_name in model_selection_options}
-    
+        xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/gity/berk.pt",force_reload=True)
     app_str = 'server:app' #make the app string equal to whatever the name of this file is
     uvicorn.run(app_str, host= opt.host, port=opt.port, reload=True)
+
+
+
+
+ 

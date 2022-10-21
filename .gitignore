@@ -2,3 +2,8 @@
 /yolov5l.pt
 /yolov5s.pt
 /__pycache__
+weights/logo.pt
+weights/real_yolov5s.pt
+weights/.DS_Store
+.DS_Store
+berk.pt
