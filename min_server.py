@@ -13,6 +13,9 @@ and does not involve stuff like Bootstrap, Javascript, JQuery, etc.
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 from PIL import Image
 from io import BytesIO
 
@@ -32,10 +35,8 @@ async def home(request: Request):
     <div>
       <label>Select YOLO Model</label>
       <select name="model_name">
-        <option>yolov5s</option>
-        <option>yolov5m</option>
-        <option>yolov5l</option>
-        <option>yolov5x</option>
+        <option>xalil</option>
+        <option>berk</option>
       </select>
     </div>
   </div>
@@ -59,7 +60,11 @@ async def process_home_form(file: UploadFile = File(...),
     operation.
     '''
 
-    model = torch.hub.load('ultralytics/yolov5', model_name, pretrained=True, force_reload = False)
+    
+    my_path = f"/Users/halil/Desktop/gity/weights/{model_name}.pt"
+    model = torch.hub.load('ultralytics/yolov5', "custom",path = my_path, force_reload = False)
+
+
 
     #This is how you decode + process image with PIL
     results = model(Image.open(BytesIO(await file.read())))
@@ -90,5 +95,5 @@ def results_to_json(results, model):
 if __name__ == '__main__':
     import uvicorn
     
-    app_str = 'server_minimal:app'
+    app_str = 'min_server:app'
     uvicorn.run(app_str, host='localhost', port=8000, reload=True, workers=1)
