@@ -18,6 +18,10 @@ templates = Jinja2Templates(directory = 'templates')
 
 model_selection_options = ["berk","xalil"]
 
+
+
+
+
 colors = [tuple([random.randint(0, 255) for _ in range(3)]) for _ in range(100)] #for bbox plotting
 
 ##############################################
@@ -65,7 +69,15 @@ def detect_with_server_side_rendering(request: Request,
     #using cvtColor instead of [...,::-1] to keep array contiguous in RAM
     img_batch_rgb = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in img_batch]
 
-    xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/gity/berk.pt",force_reload=True)
+
+
+    if model_name =="xalil":
+        img_size = 1280
+    my_path = f"/Users/halil/Desktop/gity/weights/{model_name}.pt"  #choose model from same name 
+    
+    # force_reload =  whether to discard the existing cache and force fresh dowloand, default is false 
+    xalil_model = torch.hub.load("ultralytics/yolov5","custom",path=my_path,force_reload=False) 
+    
     results = xalil_model(img_batch_rgb, size = img_size)
 
     json_results = results_to_json(results,xalil_model)
