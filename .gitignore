@@ -1,6 +1,7 @@
 /README.md
 /yolov5l.pt
 /yolov5s.pt
+/map92.pt
 /__pycache__
 weights/logo.pt
 weights/real_yolov5s.pt
