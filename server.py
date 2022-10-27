@@ -65,9 +65,9 @@ def detect_with_server_side_rendering(request: Request,
     #using cvtColor instead of [...,::-1] to keep array contiguous in RAM
     img_batch_rgb = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in img_batch]
 
-    xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/gity/berk.pt",force_reload=True)
+    xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/gity/map92.pt",force_reload=True)
     results = xalil_model(img_batch_rgb, size = img_size)
-
+    
     json_results = results_to_json(results,xalil_model)
 
     img_str_list = []
