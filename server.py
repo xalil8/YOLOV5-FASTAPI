@@ -65,7 +65,7 @@ def detect_with_server_side_rendering(request: Request,
     #using cvtColor instead of [...,::-1] to keep array contiguous in RAM
     img_batch_rgb = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in img_batch]
 
-    xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/gity/berk.pt",force_reload=True)
+    xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/YOLOV5-FASTAPI/accuricy99.pt",force_reload=True)
     results = xalil_model(img_batch_rgb, size = img_size)
 
     json_results = results_to_json(results,xalil_model)
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     if opt.precache_models:
-        xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/gity/berk.pt",force_reload=True)
+        xalil_model = torch.hub.load("ultralytics/yolov5","custom",path="/Users/halil/Desktop/YOLOV5-FASTAPI/accuricy99.pt",force_reload=True)
     app_str = 'server:app' #make the app string equal to whatever the name of this file is
     uvicorn.run(app_str, host= opt.host, port=opt.port, reload=True)
 
